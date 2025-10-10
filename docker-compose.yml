@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: simcii
+    ports:
+      - "5432:5432"
+
+  java-service:
+    build: ./java-service
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8081"
+
+  python-service:
+    build: ./python-service
+    ports:
+      - "5000:5000"
+
+  go-gateway:
+    build: ./go-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - java-service
+      - python-service
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - go-gateway
