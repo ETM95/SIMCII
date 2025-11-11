@@ -1,37 +1,37 @@
-version: '3.8'
+version: '3.9'
+
 services:
-  postgres:
+  postgres-db:
     image: postgres:15
+    container_name: postgres-db
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: simcii
+      POSTGRES_USER: simcii_user
+      POSTGRES_PASSWORD: simcii_pass
+      POSTGRES_DB: simcii_db
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - simcii-network
 
   java-service:
     build: ./java-service
+    container_name: java-service
     depends_on:
-      - postgres
-    ports:
-      - "8081:8081"
-
-  python-service:
-    build: ./python-service
-    ports:
-      - "5000:5000"
-
-  go-gateway:
-    build: ./go-gateway
+      - postgres-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/simcii_db
+      SPRING_DATASOURCE_USERNAME: simcii_user
+      SPRING_DATASOURCE_PASSWORD: simcii_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
     ports:
       - "8080:8080"
-    depends_on:
-      - java-service
-      - python-service
+    networks:
+      - simcii-network
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - go-gateway
+volumes:
+  pgdata:
+
+networks:
+  simcii-network:
