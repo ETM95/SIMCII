@@ -9,6 +9,7 @@ import java.util.List;
 
 @Repository
 public interface UmbralRepository extends JpaRepository<Umbral, Long> {
+     List<Umbral> findByDispositivo(Dispositivo dispositivo);
     List<Umbral> findByDispositivoAndActivoTrue(Dispositivo dispositivo);
-    List<Umbral> findByDispositivoId(Long dispositivoId);
+    List<Umbral> findByDispositivoId(Long dispositivoId); // MÉTODO FALTANTE
 }
