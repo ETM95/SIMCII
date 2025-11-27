@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Registro - Sistema Invernadero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../static/style.css">
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB0e7j8JpeI8xxvSjOnsV9t_0VhWxo58AI",
+            authDomain: "login-go-a2538.firebaseapp.com",
+            projectId: "login-go-a2538",
+            storageBucket: "login-go-a2538.firebasestorage.app",
+            messagingSenderId: "693242609530",
+            appId: "1:693242609530:web:ea2b15baa309c4585620c3"
+        };
+
+        initializeApp(firebaseConfig);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("register-form");
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const name = document.getElementById("name").value;
+                const email = document.getElementById("email").value;
+                const password = document.getElementById("password").value;
+
+                const resp = await fetch("/register-basic", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                if (!resp.ok) {
+                    alert("Error al registrar usuario.");
+                    return;
+                }
+
+                alert("Usuario creado correctamente. Ahora puedes iniciar sesión.");
+                window.location.href = "/";
+            });
+        });
+    </script>
+
+    <style>
+        .plant-background { background: linear-gradient(135deg,#0f766e,#059669,#047857); }
+        .glass-effect { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+
+<body class="plant-background">
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="glass-effect p-10 rounded-2xl shadow-2xl w-96 mx-4">
+
+            <div class="text-center mb-8">
+                <div class="flex justify-center mb-6">
+                    <div class="bg-green-100 p-5 rounded-full shadow-lg">
+                        <span class="text-5xl text-green-600">🌿</span>
+                    </div>
+                </div>
+                <h1 class="text-3xl font-bold text-green-800">Crear cuenta</h1>
+            </div>
+
+            <!-- FORMULARIO REGISTRO -->
+            <form id="register-form">
+                <div class="space-y-6">
+
+                    <input id="name" type="text" placeholder="Nombre"
+                           class="w-full p-4 border rounded-xl" required>
+
+                    <input id="email" type="email" placeholder="Correo"
+                           class="w-full p-4 border rounded-xl" required>
+
+                    <input id="password" type="password" placeholder="Contraseña"
+                           class="w-full p-4 border rounded-xl" required>
+
+                    <button type="submit"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-semibold">
+                        📝 Registrar Usuario
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6 text-center">
+                <a href="/" class="text-green-700 font-semibold hover:text-green-900">🔙 Volver al Login</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

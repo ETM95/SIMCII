@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Sistema Invernadero</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .hidden { 
+      display: none !important; 
+    }
+
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+    }
+
+    #dashboard { 
+      height: 100vh; 
+      display: flex; 
+      flex-direction: column; 
+    }
+
+    .plant-background {
+      background: 
+        url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30,20 C40,10 60,10 70,20 C80,30 80,50 70,60 C60,70 40,70 30,60 C20,50 20,30 30,20 Z' fill='%234ade80' opacity='0.1'/%3E%3Cpath d='M20,40 C25,35 35,35 40,40 C45,45 45,55 40,60 C35,65 25,65 20,60 C15,55 15,45 20,40 Z' fill='%2322c55e' opacity='0.15'/%3E%3Cpath d='M60,30 C65,25 75,25 80,30 C85,35 85,45 80,50 C75,55 65,55 60,50 C55,45 55,35 60,30 Z' fill='%2316a34a' opacity='0.1'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40,30 Q60,10 80,30 Q90,50 80,70 Q60,90 40,70 Q30,50 40,30 Z' fill='%234ade80' opacity='0.08'/%3E%3Cpath d='M30,60 Q45,45 60,60 Q70,70 60,80 Q45,95 30,80 Q20,70 30,60 Z' fill='%2322c55e' opacity='0.1'/%3E%3C/svg%3E"),
+        linear-gradient(135deg, #0f766e 0%, #059669 50%, #047857 100%);
+      background-size: 150px 150px, 200px 200px, cover;
+      background-attachment: fixed;
+    }
+
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .slide-in {
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Scrollbar personalizado */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- Dashboard Container -->
+  <div id="dashboard">
+    <header class="bg-green-700 text-white shadow-lg flex-shrink-0">
+      <div class="px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <span class="text-2xl">🌿</span>
+          <div>
+            <h1 class="text-xl font-bold">SISTEMA INVERNADERO</h1>
+            <p class="text-green-100 text-sm">Panel de Control</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="current-time" class="text-green-100"></span>
+          <button id="btn-logout" 
+                  class="bg-green-800 hover:bg-green-900 text-white px-4 py-2 rounded-lg transition duration-200 flex items-center">
+            <span class="mr-2">🚪</span>
+            Cerrar Sesión
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-hidden p-6 bg-gray-50">
+      <!-- Estadísticas -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 slide-in">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Dispositivos Activos</h3>
+          <div class="text-3xl font-bold text-green-600" id="totalDispositivos">0</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 slide-in" style="animation-delay: 0.1s">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Alertas Activas</h3>
+          <div class="text-3xl font-bold text-orange-600" id="totalAlertas">0</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 slide-in" style="animation-delay: 0.2s">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Temperatura Promedio</h3>
+          <div class="text-3xl font-bold text-blue-600" id="tempPromedio">--°C</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 slide-in" style="animation-delay: 0.3s">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Humedad Promedio</h3>
+          <div class="text-3xl font-bold text-cyan-600" id="humedadPromedio">--%</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+        <!-- Columna izquierda -->
+        <div class="lg:col-span-2 flex flex-col gap-6 h-full">
+          <!-- Dispositivos -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col flex-1 slide-in">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold flex items-center">
+                <span class="text-xl mr-2">🔌</span>
+                Dispositivos
+              </h3>
+              <button onclick="showDeviceForm()" 
+                      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200">
+                <span class="mr-2">+</span> Nuevo Dispositivo
+              </button>
+            </div>
+            <div class="overflow-hidden flex flex-col flex-1">
+              <div class="overflow-y-auto flex-1 custom-scrollbar">
+                <div id="devicesList" class="space-y-3">
+                  <!-- Los dispositivos se cargarán aquí dinámicamente -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gráfica -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex-1 slide-in" style="animation-delay: 0.2s">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+              <span class="text-xl mr-2">📈</span>
+              Métricas en Tiempo Real
+            </h3>
+            <div class="h-80">
+              <canvas id="temperatureChart" class="w-full h-full"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna derecha -->
+        <div class="flex flex-col gap-6 h-full">
+          <!-- Alertas -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex-1 flex flex-col slide-in" style="animation-delay: 0.3s">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold flex items-center">
+                <span class="text-xl mr-2">⚠️</span>
+                Alertas Activas
+              </h3>
+              <div class="flex gap-2">
+                <button onclick="exportAlertasCSV()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm flex items-center transition duration-200">
+                  <span class="mr-1">📥</span> CSV
+                </button>
+              </div>
+            </div>
+            <div id="alertsList" class="space-y-3 flex-1 overflow-y-auto custom-scrollbar">
+              <!-- Las alertas se cargarán aquí dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modals Container -->
+  <div id="modals-container">
+    <!-- MODAL CREAR DISPOSITIVO -->
+    <div id="deviceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-md slide-in">
+        <div class="p-6">
+          <h3 class="text-xl font-bold mb-4">Agregar Dispositivo</h3>
+          <form id="device-form">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Dispositivo *</label>
+                <select id="deviceType" required
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200 bg-white">
+                  <option value="">Selecciona un tipo</option>
+                  <option value="SENSOR_TEMPERATURA">🌡️ Sensor Temperatura</option>
+                  <option value="SENSOR_HUMEDAD">💧 Sensor Humedad</option>
+                  <option value="SENSOR_LUZ">💡 Sensor Luz</option>
+                  <option value="ACTUADOR">⚡ Actuador</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                <input type="text" id="deviceName" required maxlength="50"
+                       placeholder="Ej: Sensor Temp A1"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200 bg-white">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Descripción <span id="desc-counter" class="text-xs text-gray-500">(0/15)</span>
+                </label>
+                <input type="text" id="deviceDescription" maxlength="15"
+                       placeholder="Máx. 15 caracteres"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200 bg-white">
+                <p class="text-xs text-gray-500 mt-1">Caracteres restantes: <span id="chars-remaining">15</span></p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación/Zona *</label>
+                <select id="deviceLocation" required
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200 bg-white">
+                  <option value="">Selecciona una zona</option>
+                  <option value="A">Zona A</option>
+                  <option value="B">Zona B</option>
+                  <option value="C">Zona C</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+              <button type="button" onclick="closeDeviceForm()" 
+                      class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition duration-200">
+                Cancelar
+              </button>
+              <button type="submit" 
+                      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      id="submit-btn">
+                Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CONFIRMAR ELIMINACIÓN -->
+    <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-md slide-in">
+        <div class="p-6">
+          <h3 class="text-xl font-bold mb-4 text-red-600">Confirmar Eliminación</h3>
+          <p class="text-gray-700 mb-6" id="delete-message">¿Estás seguro de que deseas eliminar este dispositivo?</p>
+          <div class="flex justify-end space-x-3">
+            <button type="button" onclick="closeDeleteModal()" 
+                    class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition duration-200">
+              Cancelar
+            </button>
+            <button type="button" onclick="confirmDelete()" 
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200">
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts Embebidos -->
+  <script>
+    // utils.js
+    const Utils = {
+        showElement: (id) => {
+            const element = document.getElementById(id);
+            if (element) element.classList.remove('hidden');
+        },
+        
+        hideElement: (id) => {
+            const element = document.getElementById(id);
+            if (element) element.classList.add('hidden');
+        },
+        
+        formatDate: (date) => {
+            return new Date(date).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    };
+
+    // devices.js
+    const Devices = {
+        devices: [],
+        
+        deviceTypes: {
+            'SENSOR_TEMPERATURA': { name: '🌡️ Sensor Temperatura', unit: '°C' },
+            'SENSOR_HUMEDAD': { name: '💧 Sensor Humedad', unit: '%' },
+            'SENSOR_LUZ': { name: '💡 Sensor Luz', unit: 'lux' },
+            'ACTUADOR': { name: '⚡ Actuador', unit: '' }
+        },
+        
+        fetchDevicesFromAPI: async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/dispositivos/simulados');
+                if (response.ok) {
+                    const data = await response.json();
+                    Devices.devices = data.dispositivos || [];
+                    Devices.renderDevices();
+                }
+            } catch (error) {
+                console.error('Error fetching devices:', error);
+                // Datos de ejemplo
+                Devices.devices = [
+                    {
+                        id: 1,
+                        nombre: 'Sensor Temp A1',
+                        tipo: 'SENSOR_TEMPERATURA',
+                        ubicacion: 'A',
+                        activo: true,
+                        ultima_lectura: 24.5,
+                        unidadMedida: '°C'
+                    },
+                    {
+                        id: 2,
+                        nombre: 'Sensor Hum B2',
+                        tipo: 'SENSOR_HUMEDAD',
+                        ubicacion: 'B',
+                        activo: true,
+                        ultima_lectura: 65.2,
+                        unidadMedida: '%'
+                    }
+                ];
+                Devices.renderDevices();
+            }
+        },
+        
+        renderDevices: () => {
+            const devicesList = document.getElementById('devicesList');
+            if (!devicesList) return;
+            
+            devicesList.innerHTML = '';
+            
+            if (Devices.devices.length === 0) {
+                devicesList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-2">🔌</div>
+                        <p>No hay dispositivos registrados</p>
+                        <p class="text-sm mt-1">Conectando con el servidor...</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            Devices.devices.forEach(device => {
+                const deviceType = Devices.deviceTypes[device.tipo] || { name: '❓ Dispositivo', unit: '' };
+                const deviceElement = document.createElement('div');
+                deviceElement.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-green-300 transition duration-200';
+                deviceElement.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center space-x-3">
+                            <div class="text-2xl">${deviceType.name.split(' ')[0]}</div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">${device.nombre}</h4>
+                                <p class="text-sm text-gray-600">${deviceType.name}</p>
+                                <div class="flex items-center space-x-4 mt-1">
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                        Zona ${device.ubicacion}
+                                    </span>
+                                    <span class="text-xs ${device.activo ? 'text-green-600' : 'text-red-600'}">
+                                        ${device.activo ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-gray-800">
+                                ${device.ultima_lectura || '--'}${deviceType.unit}
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                ${Devices.getDeviceStatus(device)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                devicesList.appendChild(deviceElement);
+            });
+            
+            Devices.updateStats();
+        },
+        
+        getDeviceStatus: (device) => {
+            if (!device.activo) return '🔴 Inactivo';
+            if (!device.ultima_lectura && device.ultima_lectura !== 0) return '⚪ Sin datos';
+            return '🟢 En línea';
+        },
+        
+        updateStats: () => {
+            const activeDevices = Devices.devices.filter(d => d.activo).length;
+            document.getElementById('totalDispositivos').textContent = activeDevices;
+        }
+    };
+
+    // alerts.js
+    const Alerts = {
+        alerts: [],
+        
+        fetchAlertsFromAPI: async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/alertas/activas');
+                if (response.ok) {
+                    const data = await response.json();
+                    Alerts.alerts = data.alertas || [];
+                    Alerts.renderAlerts();
+                }
+            } catch (error) {
+                console.error('Error fetching alerts:', error);
+                // Datos de ejemplo
+                Alerts.alerts = [
+                    {
+                        id: 1,
+                        dispositivo_nombre: 'Sensor Temp A1',
+                        tipo_alerta: 'TEMPERATURA_FUERA_RANGO',
+                        mensaje: 'Temperatura crítica: 35.2°C',
+                        valor: 35.2,
+                        zona: 'A',
+                        activa: true,
+                        fecha_creacion: new Date().toISOString(),
+                        nivel_criticidad: 2
+                    }
+                ];
+                Alerts.renderAlerts();
+            }
+        },
+        
+        renderAlerts: () => {
+            const alertsList = document.getElementById('alertsList');
+            if (!alertsList) return;
+            
+            const activeAlerts = Alerts.alerts.filter(alert => alert.activa);
+            document.getElementById('totalAlertas').textContent = activeAlerts.length;
+            
+            alertsList.innerHTML = '';
+            
+            if (activeAlerts.length === 0) {
+                alertsList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-2">✅</div>
+                        <p>No hay alertas activas</p>
+                        <p class="text-sm mt-1">Todo funciona correctamente</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            activeAlerts.sort((a, b) => (b.nivel_criticidad || 1) - (a.nivel_criticidad || 1));
+            
+            activeAlerts.slice(0, 10).forEach(alert => {
+                const alertElement = document.createElement('div');
+                const alertColor = Alerts.getAlertColor(alert.nivel_criticidad);
+                alertElement.className = `bg-${alertColor}-50 border border-${alertColor}-200 rounded-lg p-4`;
+                alertElement.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-start space-x-3">
+                            <div class="text-xl mt-1">${Alerts.getAlertIcon(alert.nivel_criticidad)}</div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-800">${alert.dispositivo_nombre}</p>
+                                <p class="text-sm text-gray-600 mt-1">${alert.mensaje}</p>
+                                <div class="flex items-center space-x-3 mt-2">
+                                    <span class="text-xs bg-${alertColor}-100 text-${alertColor}-800 px-2 py-1 rounded-full">
+                                        Zona ${alert.zona}
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        ${Alerts.formatDate(alert.fecha_creacion)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-semibold text-${alertColor}-600">
+                                ${Alerts.getCriticidadText(alert.nivel_criticidad)}
+                            </span>
+                            <div class="text-sm font-bold text-gray-800 mt-1">
+                                ${alert.valor}${Alerts.getAlertUnit(alert.tipo_alerta)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                alertsList.appendChild(alertElement);
+            });
+        },
+        
+        getAlertColor: (nivel) => {
+            switch(nivel) {
+                case 3: return 'red';
+                case 2: return 'orange';
+                case 1: return 'yellow';
+                default: return 'gray';
+            }
+        },
+        
+        getAlertIcon: (nivel) => {
+            switch(nivel) {
+                case 3: return '🚨';
+                case 2: return '⚠️';
+                case 1: return '🔔';
+                default: return '📢';
+            }
+        },
+        
+        getCriticidadText: (nivel) => {
+            switch(nivel) {
+                case 3: return 'CRÍTICA';
+                case 2: return 'ALTA';
+                case 1: return 'MEDIA';
+                default: return 'BAJA';
+            }
+        },
+        
+        getAlertUnit: (tipoAlerta) => {
+            if (tipoAlerta.includes('TEMPERATURA')) return '°C';
+            if (tipoAlerta.includes('HUMEDAD')) return '%';
+            if (tipoAlerta.includes('LUZ')) return 'lux';
+            return '';
+        },
+        
+        formatDate: (dateString) => {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('es-ES', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        },
+        
+        exportToCSV: () => {
+            window.open('http://localhost:8000/api/reportes/alertas/csv', '_blank');
+        }
+    };
+
+    // charts.js
+    const Charts = {
+        chart: null,
+        
+        init: () => {
+            const ctx = document.getElementById('temperatureChart');
+            if (!ctx) return;
+            
+            Charts.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Charts.generateTimeLabels(),
+                    datasets: [{
+                        label: 'Temperatura (°C)',
+                        data: Charts.generateInitialData(),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 15,
+                            max: 35
+                        }
+                    }
+                }
+            });
+            
+            setInterval(Charts.updateChart, 10000);
+        },
+        
+        generateTimeLabels: () => {
+            const labels = [];
+            const now = new Date();
+            for (let i = 9; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 60000);
+                labels.push(time.toLocaleTimeString('es-ES', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                }));
+            }
+            return labels;
+        },
+        
+        generateInitialData: () => {
+            const data = [];
+            for (let i = 0; i < 10; i++) {
+                data.push((Math.random() * 10 + 20).toFixed(1));
+            }
+            return data;
+        },
+        
+        updateChart: () => {
+            if (!Charts.chart) return;
+            
+            const newValue = (Math.random() * 10 + 20).toFixed(1);
+            
+            Charts.chart.data.labels.push(new Date().toLocaleTimeString('es-ES', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            }));
+            Charts.chart.data.datasets[0].data.push(newValue);
+            
+            if (Charts.chart.data.labels.length > 10) {
+                Charts.chart.data.labels.shift();
+                Charts.chart.data.datasets[0].data.shift();
+            }
+            
+            Charts.chart.update('none');
+        }
+    };
+
+    // app.js
+    const App = {
+        init: () => {
+            App.setupEventListeners();
+            App.showDashboard();
+            App.updateCurrentTime();
+            setInterval(App.updateCurrentTime, 1000);
+            App.startAutoUpdates();
+        },
+        
+        setupEventListeners: () => {
+            const logoutBtn = document.getElementById('btn-logout');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', App.handleLogout);
+            }
+            
+            const deviceForm = document.getElementById('device-form');
+            if (deviceForm) {
+                deviceForm.addEventListener('submit', App.handleDeviceCreate);
+                
+                const descInput = document.getElementById('deviceDescription');
+                if (descInput) {
+                    descInput.addEventListener('input', App.updateCharCount);
+                }
+            }
+        },
+        
+        handleLogout: () => {
+            window.location.href = '/logout';
+        },
+        
+        handleDeviceCreate: (e) => {
+            e.preventDefault();
+            alert('Funcionalidad de crear dispositivo - Conectar con API');
+            closeDeviceForm();
+        },
+        
+        updateCharCount: () => {
+            const input = document.getElementById('deviceDescription');
+            const counter = document.getElementById('chars-remaining');
+            const descCounter = document.getElementById('desc-counter');
+            
+            if (input && counter && descCounter) {
+                const remaining = 15 - input.value.length;
+                counter.textContent = remaining;
+                descCounter.textContent = `(${input.value.length}/15)`;
+            }
+        },
+        
+        updateCurrentTime: () => {
+            const timeElement = document.getElementById('current-time');
+            if (timeElement) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('es-ES', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const dateString = now.toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                timeElement.textContent = `${dateString} - ${timeString}`;
+            }
+        },
+        
+        showDashboard: () => {
+            Devices.renderDevices();
+            Alerts.renderAlerts();
+            Charts.init();
+        },
+        
+        startAutoUpdates: () => {
+            setInterval(() => {
+                Devices.fetchDevicesFromAPI();
+                Alerts.fetchAlertsFromAPI();
+            }, 5000);
+            
+            Devices.fetchDevicesFromAPI();
+            Alerts.fetchAlertsFromAPI();
+        }
+    };
+
+    // Funciones globales
+    function showDeviceForm() {
+        Utils.showElement('deviceModal');
+        document.getElementById('device-form').reset();
+        App.updateCharCount();
+    }
+
+    function closeDeviceForm() {
+        Utils.hideElement('deviceModal');
+    }
+
+    function exportAlertasCSV() {
+        Alerts.exportToCSV();
+    }
+
+    // Inicializar la aplicación cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', App.init);
+  </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Login - Sistema Invernadero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../static/style.css">
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword }
+            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        // CONFIG FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyB0e7j8JpeI8xxvSjOnsV9t_0VhWxo58AI",
+            authDomain: "login-go-a2538.firebaseapp.com",
+            projectId: "login-go-a2538",
+            storageBucket: "login-go-a2538.firebasestorage.app",
+            messagingSenderId: "693242609530",
+            appId: "1:693242609530:web:ea2b15baa309c4585620c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // LOGIN FUNCTIONAL
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const form = document.getElementById("login-form");
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const email = document.getElementById("email").value;
+                const password = document.getElementById("password").value;
+
+                try {
+                    // 1️⃣ Login Firebase
+                    const fbUser = await signInWithEmailAndPassword(auth, email, password);
+                    await fbUser.user.getIdToken();
+
+                    // 2️⃣ Login en tu backend /login-basic
+                    const resp = await fetch("/login-basic", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    if (!resp.ok) {
+                        alert("Credenciales incorrectas.");
+                        return;
+                    }
+
+                    const data = await resp.json();
+
+                    // 3️⃣ Guardar en localStorage
+                    localStorage.setItem("access_token", data.access_token);
+                    localStorage.setItem("uid", data.uid);
+
+                    // 3.1️⃣ GUARDAR TAMBIÉN EN COOKIE PARA GIN (FIX 🔥)
+                    document.cookie = `access_token=${data.access_token}; Path=/; SameSite=Lax`;
+
+                    // 4️⃣ Redirigir
+                    window.location.href = "/dashboard";
+
+                } catch (error) {
+                    console.error(error);
+                    alert("Error al iniciar sesión.");
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .plant-background { background: linear-gradient(135deg,#0f766e,#059669,#047857); }
+        .glass-effect { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+
+<body class="plant-background">
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="glass-effect p-10 rounded-2xl shadow-2xl w-96 mx-4">
+
+            <div class="text-center mb-10">
+                <div class="flex justify-center mb-6">
+                    <div class="bg-green-100 p-5 rounded-full shadow-lg">
+                        <span class="text-5xl text-green-600">🌿</span>
+                    </div>
+                </div>
+                <h1 class="text-4xl font-bold text-green-800">SISTEMA INVERNADERO</h1>
+                <p class="text-gray-600 text-lg mt-2">Acceso</p>
+            </div>
+
+            <!-- FORMULARIO LOGIN -->
+            <form id="login-form">
+                <div class="space-y-6">
+
+                    <input id="email" type="email" placeholder="Correo"
+                           class="w-full p-4 border rounded-xl" required>
+
+                    <input id="password" type="password" placeholder="Contraseña"
+                           class="w-full p-4 border rounded-xl" required>
+
+                    <button type="submit"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-semibold">
+                        🚀 Entrar al Sistema
+                    </button>
+                </div>
+            </form>
+
+            <!-- LINK A REGISTRO -->
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">¿No tienes una cuenta?</p>
+                <a href="/register" class="block mt-2 w-full bg-white text-green-700 border border-green-700 py-3 rounded-xl font-semibold hover:bg-green-50">
+                    📝 Registrarse
+                </a>
+            </div>
+
+            <div class="mt-8 pt-6 border-t text-center text-sm text-gray-500">
+                Usa tu correo y contraseña registrados en Firebase.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

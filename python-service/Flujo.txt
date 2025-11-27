@@ -1,0 +1,11 @@
+Módulo Java (Backend Principal)
+         ↓ (HTTP REST - aiohttp)
+Obtiene dispositivos reales
+         ↓
+Python simula lecturas basadas en dispositivos reales  
+         ↓
+Evalúa contra umbrales y genera alertas
+         ↓ (HTTP REST - FastAPI)
+Módulo Frontend consume alertas y estadísticas
+         ↓
+Usuario visualiza información en tiempo real

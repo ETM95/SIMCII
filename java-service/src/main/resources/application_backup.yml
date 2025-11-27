@@ -1,0 +1,53 @@
+# application.yml
+spring:
+  application:
+    name: java-service
+  
+  datasource:
+    url: jdbc:postgresql://postgres-db:5432/simcii_db
+    username: simcii_user
+    password: simcii_pass
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  web:
+    cors:
+      allowed-origins: "*"
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      enabled: true
+  health:
+    db:
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.simcii.javaservice: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.web: DEBUG
