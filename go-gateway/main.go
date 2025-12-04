@@ -9,6 +9,7 @@ import (
 	"runtime"
 
 	"gateway/auth"
+	"gateway/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +17,7 @@ import (
 func main() {
 
 	// -------------------------
-	// 📌 1. RUTA REAL DEL SERVICE ACCOUNT
+	// 1. RUTA REAL DEL SERVICE ACCOUNT
 	// -------------------------
 	_, file, _, _ := runtime.Caller(0)
 	base := filepath.Dir(file)
@@ -28,9 +29,10 @@ func main() {
 	}
 
 	// -------------------------
-	// 📌 2. INIT GIN
+	// 2. INIT GIN + Rate Limiter Global
 	// -------------------------
 	r := gin.Default()
+	r.Use(middleware.RateLimitMiddleware())
 
 	// ARCHIVOS ESTÁTICOS
 	r.Static("/static", "./static")
@@ -39,15 +41,14 @@ func main() {
 	r.LoadHTMLGlob("templates/*.html")
 
 	// -------------------------
-	// 📌 3. LOGIN PAGE (HTML)
+	// 3. LOGIN PAGE (HTML)
 	// -------------------------
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", nil)
 	})
 
 	// -------------------------
-	// 📌 4. LOGIN CON FIREBASE ID TOKEN
-	// (Para login vía frontend Firebase)
+	// 4. LOGIN CON FIREBASE ID TOKEN
 	// -------------------------
 	r.POST("/login", func(c *gin.Context) {
 
@@ -70,28 +71,28 @@ func main() {
 	})
 
 	// -------------------------
-	// 📌 5. REGISTER PAGE (HTML)
+	// 5. REGISTER PAGE (HTML)
 	// -------------------------
 	r.GET("/register", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "register.html", nil)
 	})
 
 	// -------------------------
-	// 📌 6. REGISTER BASIC (JSON)
+	// 6. REGISTER BASIC (JSON)
 	// -------------------------
 	r.POST("/register-basic", func(c *gin.Context) {
 		auth.RegisterBasicHandler(c.Writer, c.Request)
 	})
 
 	// -------------------------
-	// 📌 7. LOGIN BASIC REAL (JSON) — USANDO LoginBasicHandler
+	// 7. LOGIN BASIC REAL (JSON)
 	// -------------------------
 	r.POST("/login-basic", func(c *gin.Context) {
 		auth.LoginBasicHandler(c.Writer, c.Request)
 	})
 
 	// -------------------------
-	// 📌 8. DASHBOARD (Protegido)
+	// 8. DASHBOARD (Protegido)
 	// -------------------------
 	r.GET("/dashboard", func(c *gin.Context) {
 
@@ -106,30 +107,39 @@ func main() {
 			"Username": "Usuario Autenticado",
 		})
 	})
+
 	// -------------------------
-	// 📌 9. LOGOUT
+	// 9. LOGOUT - GET + POST
 	// -------------------------
+
+	// GET (para tu botón HTML)
+	r.GET("/logout", func(c *gin.Context) {
+		c.SetCookie("access_token", "", -1, "/", "", false, true)
+		c.Redirect(302, "/")
+	})
+
+	// POST (para llamadas AJAX si quisieras en el futuro)
 	r.POST("/logout", func(c *gin.Context) {
 		c.SetCookie("access_token", "", -1, "/", "", false, true)
 		c.Redirect(302, "/")
 	})
 
 	// -------------------------
-	// 📌 10. REFRESH TOKEN
+	// 10. REFRESH TOKEN
 	// -------------------------
 	r.POST("/refresh", func(c *gin.Context) {
 		auth.RefreshHandler(c.Writer, c.Request)
 	})
 
 	// -------------------------
-	// 📌 11. LOGOUT BASIC
+	// 11. LOGOUT BASIC
 	// -------------------------
 	r.POST("/logout-basic", func(c *gin.Context) {
 		auth.LogoutHandler(c.Writer, c.Request)
 	})
 
 	// -------------------------
-	// 📌 12. PROXY JAVA
+	// 12. PROXY JAVA
 	// -------------------------
 	javaURL, _ := url.Parse("http://java-service:8080")
 	javaProxy := httputil.NewSingleHostReverseProxy(javaURL)
@@ -146,7 +156,7 @@ func main() {
 	})
 
 	// -------------------------
-	// 📌 13. PROXY PYTHON
+	// 13. PROXY PYTHON
 	// -------------------------
 	pythonURL, _ := url.Parse("http://python-service:8000")
 	pythonProxy := httputil.NewSingleHostReverseProxy(pythonURL)
@@ -163,11 +173,8 @@ func main() {
 	})
 
 	// -------------------------
-	// 📌 GIN LOGS
+	// INICIAR SERVIDOR
 	// -------------------------
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
-
 	log.Println("🔥 Go Gateway corriendo en http://localhost:8081")
 	r.Run(":8081")
 }

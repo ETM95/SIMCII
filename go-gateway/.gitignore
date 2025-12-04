@@ -1,1 +1,72 @@
-go-gateway/serviceAccountKey.json
+#############################
+#      ARCHIVOS SENSIBLES
+#############################
+
+# Firebase keys
+serviceAccountKey.json
+*/serviceAccountKey.json
+
+# Environment variables
+.env
+.env.*
+go-gateway/.env
+python-service/.env
+java-service/.env
+
+# SSL / certs
+*.pem
+*.key
+*.crt
+
+# Keys
+*.keystore
+*.jks
+
+#############################
+#      GO BUILD
+#############################
+
+# Binaries
+*.exe
+*.out
+/go-gateway/go-gateway
+/go-gateway/go-gateway.exe
+
+#############################
+#      PYTHON
+#############################
+
+__pycache__/
+*.pyc
+
+#############################
+#      JAVA
+#############################
+
+target/
+*.class
+*.jar
+*.war
+
+#############################
+#     NODE / WEB
+#############################
+
+node_modules/
+dist/
+build/
+
+#############################
+#     LOGS & TEMP FILES
+#############################
+
+*.log
+*.tmp
+*.cache
+
+#############################
+#     DOCKER
+#############################
+
+docker-data/
+docker/tmp/
